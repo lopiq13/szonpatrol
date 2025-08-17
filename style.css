@@ -6,46 +6,27 @@
     --dark-text: #1E293B;
     --light-text: #6B7280;
     --border-color: #E5E7EB;
-    --shadow: 0 4px 12px rgba(0,0,0,0.08);
-    --font-header: 'Fredoka One', cursive;
-    --font-body: 'Nunito', sans-serif;
+    --shadow: 4px 4px 0px var(--dark-text);
+    --shadow-light: 0 4px 12px rgba(0,0,0,0.08);
 }
 
 body {
-    font-family: var(--font-body);
+    font-family: 'Nunito', sans-serif;
     background-color: var(--bg-color);
     margin: 0;
     color: var(--dark-text);
 }
 
 /* ---- STRONA LOGOWANIA ---- */
-.login-page {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-}
-
-.login-container {
-    background: var(--panel-bg);
-    padding: 40px;
-    border-radius: 20px;
-    box-shadow: var(--shadow);
-    text-align: center;
-    max-width: 400px;
-    width: 90%;
-    border: 2px solid var(--dark-text);
-}
-
+.login-page { display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+.login-container { background: var(--panel-bg); padding: 40px; border-radius: 20px; box-shadow: var(--shadow-light); text-align: center; max-width: 400px; width: 90%; border: 2px solid var(--border-color); }
 .login-container .logo { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 10px; }
 .login-container .logo img { width: 50px; }
-.login-container h1, .sidebar .logo h1 { font-family: var(--font-header); color: var(--dark-text); font-size: 2.5rem; margin: 0; }
+.login-container h1, .sidebar .logo h1 { font-family: 'Fredoka One', cursive; color: var(--dark-text); font-size: 2.5rem; margin: 0; }
 .login-container h2 { font-size: 1rem; color: var(--light-text); margin-bottom: 25px; }
-
 .google-btn { display: flex; justify-content: center; align-items: center; gap: 10px; background-color: #fff; border: 2px solid var(--border-color); padding: 10px; border-radius: 12px; text-decoration: none; color: var(--dark-text); font-weight: 700; transition: all 0.2s; }
 .google-btn:hover { background-color: #f7f7f7; }
 .google-btn img { width: 20px; }
-
 .separator { margin: 20px 0; color: var(--light-text); }
 form .input-group { text-align: left; margin-bottom: 15px; }
 form label { display: block; margin-bottom: 5px; font-weight: 700; }
@@ -71,14 +52,13 @@ form input:focus, textarea:focus { border-color: var(--primary-orange); outline:
 .profile-shortcut .avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
 .profile-shortcut span { font-weight: 700; }
 .profile-shortcut a { font-size: 0.8rem; color: var(--light-text); }
-.views-container { flex-grow: 1; position: relative; }
+.views-container { flex-grow: 1; position: relative; overflow: hidden; /* Dodano, aby uniknąć problemów z przepełnieniem */ }
 .main-content { display: flex; width: 100%; height: 100%; }
-.content-left { width: 400px; padding: 20px; overflow-y: auto; flex-shrink: 0; }
+.content-left { width: 400px; padding: 20px; overflow-y: auto; flex-shrink: 0; box-sizing: border-box; }
 .content-right { flex-grow: 1; position: relative; }
-#map { position: absolute; width: 100%; height: 100%; }
-.header-box, .add-szon-box, .szon-card { background: var(--panel-bg); padding: 20px; border: 2px solid var(--dark-text); border-radius: 16px; margin-bottom: 20px; box-shadow: 4px 4px 0px var(--dark-text); }
-.add-szon-box { border-style: dashed; }
-.szon-card h4 { font-family: var(--font-header); margin: 0 0 10px 0; font-size: 1.5rem; }
+#map, #add-szon-map { position: absolute; width: 100%; height: 100%; }
+.header-box, .szon-card { background: var(--panel-bg); padding: 20px; border: 2px solid var(--dark-text); border-radius: 16px; margin-bottom: 20px; box-shadow: var(--shadow); }
+.szon-card h4 { font-family: 'Fredoka One', cursive; margin: 0 0 10px 0; font-size: 1.5rem; }
 .szon-card p { margin: 0 0 15px 0; color: var(--light-text); }
 .meta { font-size: 0.8rem; color: var(--light-text); border-top: 1px solid var(--border-color); padding-top: 10px; }
 .meta span { margin-right: 15px; }
@@ -90,10 +70,12 @@ form input:focus, textarea:focus { border-color: var(--primary-orange); outline:
 .btn-secondary:hover { background-color: var(--bg-color); }
 
 /* ---- Style dla formularzy i podstron ---- */
-.form-container { width: 100%; max-width: 600px; margin: 40px auto; padding: 20px; }
-.form-container h2 { font-family: var(--font-header); font-size: 2.5rem; margin-bottom: 10px; }
+.form-container { width: 100%; max-width: 600px; margin: 40px auto; padding: 20px; box-sizing: border-box; /* Dodano dla bezpieczeństwa */ }
+.form-container h2 { font-family: 'Fredoka One', cursive; font-size: 2.5rem; margin-bottom: 10px; }
 .form-container p { color: var(--light-text); margin-bottom: 30px; }
-textarea { width: 100%; padding: 12px; border-radius: 12px; border: 2px solid var(--border-color); box-sizing: border-box; min-height: 100px; font-family: var(--font-body); }
+.form-in-panel { padding: 0 10px; }
+.instruction { font-size: 0.9rem; margin-bottom: 10px; color: var(--light-text); }
+textarea { width: 100%; padding: 12px; border-radius: 12px; border: 2px solid var(--border-color); box-sizing: border-box; min-height: 100px; font-family: 'Nunito', sans-serif; }
 #location-status { font-size: 0.9rem; margin-top: 10px; font-weight: bold; }
 
 /* ---- Style dla sekcji "Moje Szony" ---- */
@@ -101,18 +83,59 @@ textarea { width: 100%; padding: 12px; border-radius: 12px; border: 2px solid va
 .btn-delete:hover { background-color: #ef4444; color: white; border-color: #b91c1c; }
 #my-szons-status { text-align: center; color: var(--light-text); padding: 40px 0; }
 
-/* ---- RESPONSIVE DESIGN ---- */
-@media (max-width: 768px) {
-    .app-container { flex-direction: column; }
-    .sidebar { width: 100%; height: auto; flex-direction: row; justify-content: space-between; align-items: center; padding: 10px; box-sizing: border-box; }
+
+/* ======================================================= */
+/* === OSTATECZNA I POPRAWIONA SEKCJA RESPONSIVE DESIGN === */
+/* ======================================================= */
+@media (max-width: 800px) { /* Zwiększono próg, aby lepiej pasował do tabletów i większych telefonów */
+    .app-container {
+        /* Zmieniamy układ z poziomego na pionowy */
+        flex-direction: column;
+        /* Upewniamy się, że wysokość jest poprawna, aby uniknąć pustych przestrzeni */
+        height: 100vh;
+        max-height: -webkit-fill-available; /* Poprawka dla iOS Safari */
+    }
+
+    .sidebar {
+        /* Sidebar staje się górnym paskiem nawigacyjnym */
+        width: 100%;
+        height: auto;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 15px; /* Lepsze odstępy */
+        box-sizing: border-box;
+        border-right: none;
+        border-bottom: 2px solid var(--border-color);
+        flex-shrink: 0; /* Ważne, aby się nie kurczył */
+    }
+    
     .sidebar .logo h1 { display: none; }
-    .menu { margin: 0; display: flex; gap: 5px; }
+    .menu { margin: 0; display: flex; gap: 5px; flex-grow: 1; justify-content: center; }
     .menu h3 { display: none; }
-    .menu-item { padding: 10px; }
-    .menu-item span { display: none; }
+    .menu-item { padding: 8px 10px; /* Mniejsze przyciski */ }
+    .menu-item span { display: none; /* Ukrywamy tekst, zostają same ikony */ }
     .profile-shortcut { margin: 0; }
-    .profile-shortcut span, .profile-shortcut a { display: none; }
-    .main-content { flex-direction: column-reverse; }
-    .content-left { width: 100%; box-sizing: border-box; height: 50%; }
-    .content-right { flex-grow: 1; height: 50%; }
+    .profile-shortcut span, .profile-shortcut a { display: none; /* Ukrywamy tekst przy profilu */ }
+
+    .views-container {
+        /* Kontener z widokami zajmuje resztę dostępnej wysokości */
+        flex-grow: 1;
+    }
+
+    .main-content {
+        /* Zmieniamy układ na pionowy, mapa na górze, lista na dole */
+        flex-direction: column-reverse;
+    }
+    
+    .content-left {
+        /* Lewa kolumna (lista) zajmuje teraz 100% szerokości i połowę wysokości */
+        width: 100%;
+        height: 50%;
+    }
+    .content-right {
+        /* Prawa kolumna (mapa) zajmuje 100% szerokości i drugą połowę wysokości */
+        width: 100%;
+        height: 50%;
+    }
 }
