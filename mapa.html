@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SzonPatrol - Mapa</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <style>
+        .content-right { position: relative; }
+        #map, #add-szon-map { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="logo">
+                <img src="alarm_1843912.png" alt="SzonPatrol Logo" style="width: 40px;">
+                <h1>SzonPatrol</h1>
+            </div>
+            <nav class="menu">
+                <h3>MENU</h3>
+                <a href="#" class="menu-item" data-view="map-view"><img src="map_1443799.png" alt="map icon"/> Mapa Szonów</a>
+                <a href="#" class="menu-item" data-view="add-szon-view"><img src="plus_2623086.png" alt="add icon"/> Dodaj Szona</a>
+                <a href="#" class="menu-item" data-view="my-szons-view"><img src="group_1621648.png" alt="my places icon"/> Moje Szony</a>
+            </nav>
+            <div class="profile-shortcut">
+                <img id="user-avatar" src="user_9650503.png" alt="profile icon" class="avatar">
+                <div>
+                    <span id="user-display-name">...</span>
+                    <a href="#" id="logout-btn">Wyloguj się</a>
+                </div>
+            </div>
+        </aside>
+
+        <div class="views-container">
+            <main class="main-content view" id="map-view">
+                <div class="content-left">
+                    <div class="header-box"><h2>Szony w twojej okolicy</h2><span id="szon-count">Ładowanie...</span></div>
+                    <div class="szon-list" id="szon-list-container"></div>
+                </div>
+                <div class="content-right"><div id="map"></div></div>
+            </main>
+
+            <main class="main-content view" id="add-szon-view" style="display: none;">
+                 <div class="content-left">
+                    <div class="header-box"><h2>Dodaj Nowego Szona</h2><span id="szon-limit-info">Sprawdzanie limitu...</span></div>
+                    <form id="add-szon-form" class="form-in-panel">
+                        <div class="input-group"><label for="szon-name">Nazwa Szona *</label><input type="text" id="szon-name" placeholder="np. Szon Halinka" required></div>
+                        <div class="input-group"><label for="szon-desc">Opis</label><textarea id="szon-desc" placeholder="Co, gdzie, jak?"></textarea></div>
+                        <div class="input-group">
+                            <label>Lokalizacja *</label>
+                            <p class="instruction">Użyj swojej lokalizacji lub kliknij na mapie, aby postawić pinezkę.</p>
+                            <button type="button" class="btn-secondary" id="get-location-btn">Użyj mojej lokalizacji</button>
+                            <p id="location-status">Oczekiwanie na lokalizację...</p>
+                        </div>
+                        <button type="submit" class="btn-primary">Dodaj Szona!</button>
+                    </form>
+                </div>
+                <div class="content-right"><div id="add-szon-map"></div></div>
+            </main>
+
+            <main class="main-content view" id="my-szons-view" style="display: none;">
+                <div class="form-container">
+                    <h2>Moje dodane Szony</h2><p>Tutaj znajdziesz wszystkie dodane przez siebie Szony. Możesz je usunąć, jeśli chcesz zwolnić swój dzienny limit.</p>
+                    <div id="my-szons-list-container"><p id="my-szons-status">Ładowanie...</p></div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+      import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+      import { getFirestore, collection, addDoc, serverTimestamp, query, onSnapshot, where, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+      
+      const firebaseConfig = {
+        apiKey: "AIzaSyCuibYJxksPJqZZ3C0EgjnhccnSku6EQW8",
+        authDomain: "szonpatrol-a33a2.firebaseapp.com",
+        projectId: "szonpatrol-a33a2",
+        storageBucket: "szonpatrol-a33a2.appspot.com",
+        messagingSenderId: "508795650559",
+        appId: "1:508795650559:web:3e3eef5060a7d64d5967ca",
+        measurementId: "G-XBR987MZGH"
+      };
+      
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+
+      const map = L.map('map').setView([50.0647, 19.9450], 13);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
+      let mapMarkers = [];
+
+      const addSzonMap = L.map('add-szon-map').setView([50.0647, 19.9450], 13);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(addSzonMap);
+      let placementMarker = null;
+
+      const views = document.querySelectorAll('.view');
+      const menuItems = document.querySelectorAll('.menu-item');
+
+      function showView(viewId) {
+        views.forEach(view => view.style.display = 'none');
+        document.getElementById(viewId).style.display = 'flex';
+        menuItems.forEach(item => {
+            item.classList.toggle('active', item.dataset.view === viewId);
+        });
+        if (viewId === 'map-view') {
+            setTimeout(() => { map.invalidateSize(); }, 50);
+        } else if (viewId === 'add-szon-view') {
+            setTimeout(() => {
+                addSzonMap.invalidateSize();
+                addSzonMap.setView(map.getCenter(), map.getZoom());
+            }, 50);
+        }
+      }
+
+      menuItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            showView(item.dataset.view);
+        });
+      });
+      
+      let currentUser = null;
+      let selectedLocation = null;
+
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          currentUser = user;
+          document.getElementById('user-display-name').textContent = user.displayName || user.email;
+          document.getElementById('user-avatar').src = user.photoURL || 'user_9650503.png';
+          listenForSzons();
+          listenForMySzons();
+          showView('map-view');
+        } else {
+          window.location.href = 'index.html';
+        }
+      });
+
+      document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
+
+      function listenForSzons() {
+        const szonsRef = collection(db, 'szony');
+        const q = query(szonsRef);
+        onSnapshot(q, (snapshot) => {
+          const szonListContainer = document.getElementById('szon-list-container');
+          szonListContainer.innerHTML = '';
+          mapMarkers.forEach(marker => marker.remove());
+          mapMarkers = [];
+          document.getElementById('szon-count').textContent = `Liczba aktywnych Szonów: ${snapshot.size}`;
+          snapshot.forEach((doc) => {
+            const szon = doc.data();
+            if (szon.location && szon.location.lat && szon.location.lng) {
+                const marker = L.marker([szon.location.lat, szon.location.lng]).addTo(map).bindPopup(`<h4>${szon.nazwa}</h4><p>${szon.opis || ''}</p>`);
+                mapMarkers.push(marker);
+            }
+            const cardHTML = `<div class="szon-card"><h4>${szon.nazwa}</h4><p>${szon.opis || 'Brak opisu.'}</p><div class="meta"><span>Dodał: ${szon.authorName || 'Anonim'}</span></div></div>`;
+            szonListContainer.insertAdjacentHTML('beforeend', cardHTML);
+          });
+        });
+      }
+
+      function listenForMySzons() {
+        if (!currentUser) return;
+        const mySzonsContainer = document.getElementById('my-szons-list-container');
+        const szonsRef = collection(db, 'szony');
+        const q = query(szonsRef, where("createdBy", "==", currentUser.uid));
+        onSnapshot(q, (snapshot) => {
+            mySzonsContainer.innerHTML = '';
+            if (snapshot.empty) {
+                mySzonsContainer.innerHTML = '<p id="my-szons-status">Nie dodałeś jeszcze żadnych Szonów.</p>';
+                return;
+            }
+            snapshot.forEach(doc => {
+                const szon = doc.data();
+                const cardHTML = `<div class="szon-card"><h4>${szon.nazwa}</h4><p>${szon.opis || 'Brak opisu.'}</p><div class="meta"><span>Dodano: ${szon.createdAt ? new Date(szon.createdAt.toDate()).toLocaleString('pl-PL') : 'Brak daty'}</span><button class="btn-delete" data-id="${doc.id}">Usuń</button></div></div>`;
+                mySzonsContainer.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        });
+      }
+
+      document.getElementById('my-szons-list-container').addEventListener('click', async (e) => {
+        if (e.target.classList.contains('btn-delete')) {
+            const szonId = e.target.dataset.id;
+            if (confirm("Czy na pewno chcesz usunąć tego Szona?")) {
+                try {
+                    await deleteDoc(doc(db, "szony", szonId));
+                    alert("Szon został usunięty.");
+                } catch (error) {
+                    console.error("Błąd podczas usuwania Szona: ", error);
+                    alert("Wystąpił błąd.");
+                }
+            }
+        }
+      });
+
+      const addSzonForm = document.getElementById('add-szon-form');
+      const getLocationBtn = document.getElementById('get-location-btn');
+      const locationStatus = document.getElementById('location-status');
+      
+      function updatePlacement(latlng) {
+          selectedLocation = { lat: latlng.lat, lng: latlng.lng };
+          locationStatus.textContent = `✅ Wybrano lokalizację! (${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)})`;
+          locationStatus.style.color = 'green';
+          if (!placementMarker) {
+              placementMarker = L.marker(latlng).addTo(addSzonMap);
+          } else {
+              placementMarker.setLatLng(latlng);
+          }
+          addSzonMap.panTo(latlng);
+      }
+
+      addSzonMap.on('click', (e) => {
+          updatePlacement(e.latlng);
+      });
+
+      getLocationBtn.addEventListener('click', () => {
+        if ("geolocation" in navigator) {
+            locationStatus.textContent = "Pobieranie lokalizacji...";
+            navigator.geolocation.getCurrentPosition(position => {
+                const latlng = { lat: position.coords.latitude, lng: position.coords.longitude };
+                updatePlacement(latlng);
+            }, () => {
+                locationStatus.textContent = "❌ Błąd: Nie można pobrać lokalizacji.";
+                locationStatus.style.color = 'red';
+            });
+        }
+      });
+      
+      addSzonForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!currentUser || !selectedLocation) return alert("Musisz być zalogowany i wybrać lokalizację!");
+        const nazwa = document.getElementById('szon-name').value;
+        const opis = document.getElementById('szon-desc').value;
+        try {
+            await addDoc(collection(db, 'szony'), { nazwa, opis, createdAt: serverTimestamp(), createdBy: currentUser.uid, authorName: currentUser.displayName, location: selectedLocation });
+            alert("Nowy Szon pomyślnie dodany!");
+            addSzonForm.reset();
+            locationStatus.textContent = "Oczekiwanie na lokalizację...";
+            if(placementMarker) {
+                placementMarker.remove();
+                placementMarker = null;
+            }
+            selectedLocation = null;
+            showView('map-view');
+        } catch (error) {
+            console.error("Błąd dodawania Szona:", error);
+            alert("Wystąpił błąd podczas dodawania Szona.");
+        }
+      });
+    </script>
+</body>
+</html>
